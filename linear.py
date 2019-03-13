@@ -4,9 +4,10 @@ import pandas
 
 class LinearRegression(object):
 
-	def __init__(self, training_data):
+	def __init__(self, training_data, testing_data):
 		self.model = linear_model.LinearRegression()
 		self.training_data = training_data
+		self.testing_data = testing_data
 
 	def fit(self, x, y):
 		_x = self.training_data[x].to_numpy()
@@ -17,6 +18,7 @@ class LinearRegression(object):
 		self.coefficients = dict(zip(x, *self.model.coef_))
 		self.r2 = self._r2(_y, y)
 		self.mse = self._mse(_y, y)
+		self.x = x
 
 	def _r2(self, train, pred):
 		return metrics.r2_score(train, pred)
@@ -24,8 +26,9 @@ class LinearRegression(object):
 	def _mse(self, train, pred):
 		return metrics.mean_squared_error(train, pred)
 
-	def predict(self, x, keys):
-		ys = self.model.predict(x)
+	def predict(self, keys):
+		_x = self.testing_data[self.x].to_numpy()
+		ys = self.model.predict(_x)
 		preds = []
 		for (i, r), y in zip(self.training_data.iterrows(), ys):
 			p = [y]
