@@ -7,7 +7,7 @@ class Cleaner(object):
 	def __init__(self, data):
 		self.data = data
 
-	def _category_values(self, category):
+	def category_values(self, category):
 		return list(set(self.data[category].to_list()))
 
 	def category_to_bool(self, category):
@@ -24,6 +24,9 @@ class Cleaner(object):
 		return x
 
 	def clean(self, numerics, categories):
+	
+		self.variables = []
+
 		for numeric in numerics:
 			try:
 				_f = numeric['func']
@@ -31,14 +34,16 @@ class Cleaner(object):
 				_f = self.clean_numeric
 			n = numeric['name']			
 			self.clean_column(n, _f)
+			self.variables.append(n)
 
-		self.category_values = []
 		for category in categories:
 			c = category['name']
-			self.category_values.append(self._category_values(c))
 			
 			if 'func' in category:
 				self.clean_column(c, category['func'])
+
+			for cv in self.category_values(c):
+				self.variables.append(cv)
 
 			self.category_to_bool(c)
 				

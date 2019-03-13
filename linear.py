@@ -14,7 +14,7 @@ class LinearRegression(object):
 		self.model.fit(_x, _y)
 		y = self.model.predict(_x)
 		self.intercept = self.model.intercept_[0]
-		self.coefficients = dict(zip(x, *model.coef_))
+		self.coefficients = dict(zip(x, *self.model.coef_))
 		self.r2 = self._r2(_y, y)
 		self.mse = self._mse(_y, y)
 
