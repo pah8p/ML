@@ -1,75 +1,94 @@
 
-from sklearn import linear_model, metrics
+from sklearn import linear_model, metrics, model_selection, pipeline, preprocessing
 import pandas
+import numpy
 
 class ModelBase(object):
 
-	def __init__(self, model, training_data, testing_data):
-		self.model = model()
-		self.training_data = training_data
-		self.testing_data = testing_data
-
-	def _fit(self, x, y):
-		self._x = self.training_data[x].to_numpy()
-		self._y = self.training_data[[y]].to_numpy()
-		self.model.fit(self._x, self._y)
-		self.x = x
+	def __init__(self, model, y, x_train, x_test):
+		self.model = model
 		self.y = y
-		self.y_hat = self.model.predict(self._x)
+		self.x_train = x_train
+		self.x_test = x_test
+
+	def cross_validate(self):
+		kf = model_selection.KFold(5, shuffle=True, random_state = 42).get_n_splits(self.x_train)
+		score = model_selection.cross_val_score(
+			self.model,
+			self.x_train,
+			self.y,
+			scoring = 'neg_mean_squared_error',
+			cv = kf
+		)
+		return numpy.sqrt(-score)
+
+	def _fit(self):
+		#self._x = self.training_data[x].to_numpy()
+		#self._y = self.training_data[[y]].to_numpy()
+		self.model.fit(self.x_train, self.y)
+		#self.x = x
+		#self.y = y
+		self.y_hat = self.model.predict(self.x_train)
+		self.cv = self.cross_validate()
+
+	#def predict(self, keys):
+	#	return self._predict(self.testing_data, keys)
+
+	#def errors(self, keys):
+	#	data = self._predict(self.training_data, list(set(keys+[self.y])))
+	#	data['SqErr'] = (data['PredValue'] - data[self.y])**2
+	#	return data
+
+	#def _predict(self, data, keys):
+	#	_x = data[self.x].to_numpy()
+	#	ys = self.model.predict(_x)
+	#	preds = []
+	#	for (i, r), y in zip(data.iterrows(), ys):
+	#		p = [y[0]]
+	#		for key in keys:
+	#			p.append(r[key])
+	#		preds.append(p)
+	#	return pandas.DataFrame(preds, columns=['PredValue']+keys)
 
 class Linear(ModelBase):
 
-	def __init__(self, training_data, testing_data):
+	def __init__(self, y, x_train, x_test):
 		super().__init__(
-			linear_model.LinearRegression, 
-			training_data, 
-			testing_data
+			linear_model.LinearRegression(), 
+			y, 
+			x_train, 
+			x_test, 
 		)
 
-	def fit(self, x, y):
-		#_x = self.training_data[x].to_numpy()
-		#_y = self.training_data[[y]].to_numpy()
-		#self.model.fit(_x, _y)
-		#pred = self.model.predict(_x)
-		self._fit(x, y)
+	def fit(self):
+		self._fit()
 		self.intercept = self.model.intercept_[0]
-		self.coefficients = dict(zip(x, *self.model.coef_))
-		self.r2 = self._r2(self._y, self.y_hat)
-		self.mse = self._mse(self._y, self.y_hat)
-		#self.x = x
-		#self.y = y
+		#self.coefficients = dict(zip(x, *self.model.coef_))
+		self.r2 = self._r2(self.y, self.y_hat)
+		self.mse = self._mse(self.y, self.y_hat)
 
 	def _r2(self, train, pred):
 		return metrics.r2_score(train, pred)
 
 	def _mse(self, train, pred):
 		return metrics.mean_squared_error(train, pred)
-
-	def predict(self, keys):
-		return self._predict(self.testing_data, keys)
-
-	def errors(self, keys):
-		data = self._predict(self.training_data, keys)
-		data['SqErr'] = (data['PredValue'] - data[self.y])**2
-		return data
-
-	def _predict(self, data, keys):
-		_x = data[self.x].to_numpy()
-		ys = self.model.predict(_x)
-		preds = []
-		for (i, r), y in zip(self.training_data.iterrows(), ys):
-			p = [y[0]]
-			for key in keys:
-				p.append(r[key])
-			preds.append(p)
-		return pandas.DataFrame(preds, columns=['PredValue']+keys)
 			
 
-class Lasso(object):
+class Lasso(ModelBase):
 
-	def __init__(self, training_data, testing_data):
+	def __init__(self, y, x_train, x_test, alpha=None):
+		lasso = linear_model.Lasso(alpha=alpha)
+		model = pipeline.make_pipeline(preprocessing.RobustScaler(), lasso)
 		super().__init__(
-			linear_model.Lasso,
-			training_data,
-			testing_data,
+			model,
+			y,
+			x_train,
+			x_test,
 		)
+
+	def fit(self):
+		self._fit()
+		#self.r2 = self._r2()
+
+	def _r2(self):
+		self.model.score()

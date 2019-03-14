@@ -21,8 +21,8 @@ def map_1_10(x):
 	}
 	return _map[x]
 
-training_data = pandas.read_csv('train.csv', na_filter=False)
-testing_data = pandas.read_csv('test.csv', na_filter=False)
+x_train = pandas.read_csv('train.csv', na_filter=False)
+x_test = pandas.read_csv('test.csv', na_filter=False)
 
 numeric_vars = [
 #	{'name': '1stFlrSF'},
@@ -30,64 +30,63 @@ numeric_vars = [
 #	{'name': 'YearBuilt'},
 #	{'name': 'BedroomAbvGr'},
 	{'name': 'TotalSF', 'sum': ['1stFlrSF', '2ndFlrSF', 'TotalBsmtSF']},
-	{'name': 'OverallRating', 'sum': ['OverallQual', 'OverallCond']},
+#	{'name': 'OverallRating', 'sum': ['OverallQual', 'OverallCond']},
 ]
 
 category_vars = [
-#	{'name': 'OverallQual', 'func': map_1_10},
+	{'name': 'OverallQual', 'func': map_1_10},
 #	{'name': 'OverallCond', 'func': map_1_10},
 	{'name': 'Neighborhood'},
 #	{'name': 'HouseStyle'},
 #	{'name': 'MSZoning'},
 #	{'name': 'SaleCondition'},
 #	{'name': 'SaleType'},
-	{'name': 'Exterior1st'},
-	{'name': 'Condition1'},
-	{'name': 'LotShape'},
-	{'name': 'LandContour'},
+#	{'name': 'Exterior1st'},
+#	{'name': 'Condition1'},
+#	{'name': 'LotShape'},
+#	{'name': 'LandContour'},
 ]
 
-training_data['Log1SalePrice'] = numpy.log(1+training_data['SalePrice'])
+
+y = pandas.DataFrame(x_train['SalePrice'], columns=['SalePrice'])
+x_train.drop('SalePrice', axis=1, inplace=True)
+
+y['Log1SalePrice'] = numpy.log1p(y['SalePrice'])
 
 plots = [
-	[plot.fitted_histogram, training_data['SalePrice']],
-	[plot.fitted_histogram, training_data['Log1SalePrice']],
-	[plot.qq, training_data['SalePrice']],
-	[plot.qq, training_data['Log1SalePrice']],
+	[plot.fitted_histogram, y['SalePrice']],
+	[plot.fitted_histogram, y['Log1SalePrice']],
+	[plot.qq, y['SalePrice']],
+	[plot.qq, y['Log1SalePrice']],
 ]
 #plot.view(plots)
-	
+y.to_csv('y.csv', index=False)
+y_np = y.drop('SalePrice', axis=1).to_numpy()
 
-cleaner = Cleaner(training_data, testing_data)
-
-#print(cleaner.category_values(cleaner.training_data, 'Exterior1st'))
-#print(cleaner.category_values(cleaner.testing_data, 'Exterior1st'))
-
-#print(len(training_data))
-#print(len(testing_data))
-
+cleaner = Cleaner(x_train, x_test)
 cleaner.clean(numeric_vars, category_vars)
 
-#print(len(cleaner.training_data))
-#print(len(cleaner.testing_data))
+cleaner.x_train.to_csv('x_train.csv', index=False)
 
-model = regression.Linear(cleaner.training_data, cleaner.testing_data)
+linear_model = regression.Linear(y, cleaner.x_train_np, cleaner.x_test_np)
+linear_model.fit()
+print(linear_model.cv)
 
+lasso_model = regression.Lasso(y, cleaner.x_train_np, cleaner.x_test_np, 0.005)
+lasso_model.fit()
+print(lasso_model.cv)
 
-
-#print(cleaner.variables)
-
-model.fit(cleaner.variables, 'SalePrice')
-
-print(model.r2)
-print(model.mse)
+#print(model.y_hat)
+#print(model.r2)
+#print(model.r2)
+#print(model.mse)
 
 #model.errors(
 #	['Id', 'SalePrice', 'SaleType', 'BldgType', 'Exterior1st', 'Neighborhood', 'OverallQual',
 #	'Condition1','OverallCond']
 #).to_csv('errors.csv', index=False)
 
-#model.predict(['Id']).to_csv('predict.csv', index=False)
+#model.errors(['Id']).to_csv('predict.csv', index=False)
 
 
 
