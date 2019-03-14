@@ -2,6 +2,9 @@
 import pandas
 import math
 
+#TODO df[col].fillna('None')
+#TODO df[col].filna(df[col].mode()[0])
+
 class Cleaner(object):
 
 	def __init__(self, training_data, testing_data):
@@ -12,11 +15,12 @@ class Cleaner(object):
 		return list(set(data[category].to_list()))
 
 	def category_to_bool(self, data, category):
-		#TODO does this work if training and test data
-		#have different category values?
 		dummies = pandas.get_dummies(data[category])
+		print(len(data), len(dummies), category)
 		data.drop(category, axis=1)
+		print(len(data), len(dummies), category)		
 		data = data.join(dummies)
+		print(len(data), len(dummies), category)
 		return data
 
 	def sum_columns(self, data, name, cols):
@@ -30,17 +34,22 @@ class Cleaner(object):
 		try:
 			data[name] = data[name].map(lambda x: f(x))
 		except KeyError:
-			#TODO log error or something
 			pass
 		return data
 
 	def clean_numeric(self, x):
-		if math.isnan(x):
+		if isinstance(x, str):
+			return 0
+		elif math.isnan(x):
 			return 0
 		return x
 
-	def _clean(self, data, numerics, categories):
+	def clean(self, numerics, categories):
 	
+		split = len(self.training_data)
+		data = self.training_data.append(self.testing_data, sort=False)
+		data = self.training_data
+		print(len(data))
 		self.variables = []
 
 		for numeric in numerics:			
@@ -55,22 +64,26 @@ class Cleaner(object):
 			
 			if 'sum' in numeric:
 				data = self.sum_columns(data, n, numeric['sum'])
-
-
+		
 		for category in categories:
 			c = category['name']
 			
 			if 'func' in category:
 				data = self.clean_column(data, c, category['func'])
 
+			print(len(data), c)
+
 			for cv in self.category_values(data, c):
 				self.variables.append(cv)
 
 			data = self.category_to_bool(data, c)
-				
-		return data
+		print(len(data))
+		self.training_data = data[:split]
+		self.testing_data = data[split:]
+		
+		#return data
 
-	def clean(self, numerics, categories):
-		self.training_data = self._clean(self.training_data, numerics, categories)
-		self.testing_data = self._clean(self.testing_data, numerics, categories)
+#	def clean(self, numerics, categories):
+#		self.training_data = self._clean(self.training_data, numerics, categories)
+#		self.testing_data = self._clean(self.testing_data, numerics, categories)
 
