@@ -69,7 +69,7 @@ class Stacked(object):
 
 		fitted_models = []
 
-		kf = model_selection.KFold(n_splits = 5, shuffle=True, random_state = 42)
+		kf = model_selection.KFold(n_splits=5, shuffle=True, random_state=42)
 		
 		preds = numpy.zeros((len(x), len(self.sub_models)))
 
@@ -127,8 +127,6 @@ class Linear(ModelBase):
 		self.mse = self._mse(self.y, self.y_hat)
 
 
-			
-
 class Lasso(ModelBase):
 
 	def __init__(self, alpha=1.0):
@@ -140,13 +138,6 @@ class Lasso(ModelBase):
 			#x_train,
 			#x_test,
 		)
-
-	def fit(self, x, y):
-		self._fit(x, y)
-		#self.r2 = self._r2()
-
-	def _r2(self):
-		self.model.score()
 
 class ElasticNet(ModelBase):
 

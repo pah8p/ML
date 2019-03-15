@@ -11,42 +11,6 @@ def ignore_warn(*args, **kwargs):
 
 warnings.warn = ignore_warn
 
-def map_mssubclass(x):
-	_map = {
-		20: '1-STORY 1946 & NEWER ALL STYLES',
-		30: '1-STORY 1945 & OLDER',
-		40: '1-STORY W/FINISHED ATTIC ALL AGES',
-		45: '1-1/2 STORY - UNFINISHED ALL AGES',
-		50: '1-1/2 STORY FINISHED ALL AGES',
-		60: '2-STORY 1946 & NEWER',
-		70: '2-STORY 1945 & OLDER',
-		75: '2-1/2 STORY ALL AGES',
-		80: 'SPLIT OR MULTI-LEVEL',
-		85: 'SPLIT FOYER',
-		90: 'DUPLEX - ALL STYLES AND AGES',
-	       120: '1-STORY PUD (Planned Unit Development) - 1946 & NEWER',
-	       150: '1-1/2 STORY PUD - ALL AGES',
-	       160: '2-STORY PUD - 1946 & NEWER',
-	       180: 'PUD - MULTILEVEL - INCL SPLIT LEV/FOYER',
-	       190: '2 FAMILY CONVERSION - ALL STYLES AND AGES',
-	}
-	return str(x) #_map[x]
-
-def map_1_10(x):
-	_map = {
-		10: 'VeryExcellent',
-		9: 'Excellent',
-		8: 'VeryGood',
-		7: 'Good',
-		6: 'AboveAverage',
-		5: 'Average',
-		4: 'BelowAverage',
-		3: 'Fair',
-		2: 'Poor',
-		1: 'VeryPoor',
-	}
-	return _map[x]
-
 x_train = pandas.read_csv('train.csv')
 x_test = pandas.read_csv('test.csv')
 
@@ -139,8 +103,6 @@ x_test.drop('Id', axis=1, inplace=True)
 
 cleaner = Cleaner(x_train, x_test)
 cleaner.clean(variables)
-
-#cleaner.x_train.to_csv('x_train.csv', index=False)
 
 #linear = regression.Linear() 
 #linear_cv = linear.cross_validate(cleaner.x_train_np, y)
