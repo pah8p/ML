@@ -104,42 +104,46 @@ x_test.drop('Id', axis=1, inplace=True)
 cleaner = Cleaner(x_train, x_test)
 cleaner.clean(variables)
 
-#linear = regression.Linear() 
-#linear_cv = linear.cross_validate(cleaner.x_train_np, y)
-#print('LINEAR', linear_cv)
+linear = regression.build('Linear')
+linear_cv = regression.cross_validate(linear, cleaner.x_train_np, y)
+print('LINEAR', linear_cv)
 
-lasso = regression.Lasso(alpha=0.002)
-lasso_cv = lasso.cross_validate(cleaner.x_train_np, y_np)
+lasso = regression.build('Lasso', alpha=0.002)
+lasso_cv = regression.cross_validate(lasso, cleaner.x_train_np, y_np)
 print('LASSO', lasso_cv)
 
-elastic_net = regression.ElasticNet(alpha=0.002)
-elastic_net_cv = elastic_net.cross_validate(cleaner.x_train_np, y_np)
+elastic_net = regression.build('ElasticNet', alpha=0.002)
+elastic_net_cv = regression.cross_validate(elastic_net, cleaner.x_train_np, y_np)
 print('ELASTIC NET', elastic_net_cv)
 
-kernel_ridge = regression.KernelRidge()
-kernel_ridge_cv = kernel_ridge.cross_validate(cleaner.x_train_np, y_np)
+kernel_ridge = regression.build('KernelRidge')
+kernel_ridge_cv = regression.cross_validate(kernel_ridge, cleaner.x_train_np, y_np)
 print('KERNEL RIDGE', kernel_ridge_cv)
 
-gradient_boost = regression.GradientBoosting()
-gdcv = gradient_boost.cross_validate(cleaner.x_train_np, y_np)
+gradient_boost = regression.build('GradientBoosting')
+gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
 print('GRADIENT BOOST', gdcv)
 
-subs = [lasso, elastic_net, kernel_ridge, gradient_boost]
-model = regression.Lasso(alpha=0.005)
-stacked = regression.Stacked(model, subs)
+xg_boost = regression.build('XGBoost')
+xg_cv = regression.cross_validate(xg_boost, cleaner.x_train_np, y_np)
+print('XG BOOST', xg_cv)
+
+#subs = [lasso, elastic_net, kernel_ridge, gradient_boost]
+#model = regression.Lasso(alpha=0.005)
+#stacked = regression.Stacked(model, subs)
 #stacked_cv = stacked.cross_validate(cleaner.x_train_np, y_np)
 #print('STACKED', stacked_cv)
 
-stacked.fit(cleaner.x_train_np, y_np)
+#stacked.fit(cleaner.x_train_np, y_np)
 
 #stacked.predict(cleaner.x_test_np)
 
-plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
+#plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
 
-res = pandas.DataFrame()
-res['Id'] = test_id
-res['SalePrice'] = numpy.exp(stacked.predict(cleaner.x_test_np))
-res.to_csv('predictions3.csv', index=False)
+#res = pandas.DataFrame()
+#res['Id'] = test_id
+#res['SalePrice'] = numpy.exp(stacked.predict(cleaner.x_test_np))
+#res.to_csv('predictions3.csv', index=False)
 
 
 
