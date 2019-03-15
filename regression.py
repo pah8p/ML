@@ -1,5 +1,5 @@
 
-from sklearn import linear_model, metrics, model_selection, pipeline, preprocessing
+from sklearn import linear_model, kernal_ridge, ensemble, metrics, model_selection, pipeline, preprocessing
 import pandas
 import numpy
 
@@ -13,14 +13,17 @@ class ModelBase(object):
 
 	def cross_validate(self):
 		kf = model_selection.KFold(5, shuffle=True, random_state = 42).get_n_splits(self.x_train)
-		score = model_selection.cross_val_score(
+		score = numpy.sqrt(-model_selection.cross_val_score(
 			self.model,
 			self.x_train,
 			self.y,
 			scoring = 'neg_mean_squared_error',
 			cv = kf
-		)
-		return numpy.sqrt(-score)
+		))
+		return score, numpy.mean(score), numpy.stdev(score)
+
+	def fit(self):
+		return self._fit()
 
 	def _fit(self):
 		#self._x = self.training_data[x].to_numpy()
@@ -92,3 +95,47 @@ class Lasso(ModelBase):
 
 	def _r2(self):
 		self.model.score()
+
+class ElasticNet(ModelBase):
+
+	def __init__(self, y, x_train, x_test):
+		elastic_net = linear_model.ElasticNet(alpha=0.0005, l1_ratio=.9, random_state=3)
+		model = pipeline.make_pipeline(preprocessing.RobustScaler(), elastic_net)
+		super().__init__(
+			model,
+			y,
+			x_train,
+			x_test,
+		)
+
+class KernalRidge(ModelBase):
+	
+	def __init__(self, y, x_train, x_test):
+		model = kernel_ridge.KernelRidge(alpha=0.6, kernel='polynomial', degree=2, coef0=2.5)
+		super().__init__(
+			model,
+			y,	
+			x_train,
+			x_test,
+		)
+
+class GradientBoosting(ModelBase):
+
+	def __init__(self, y, x_train, x_test):
+		model = ensemble.GradientBoostingRegressor(
+			n_estimators=3000, 
+			learning_rate=0.05,
+			max_depth=4, 
+			max_features='sqrt',
+			min_samples_leaf=15, 
+			min_samples_split=10, 
+			loss='huber', 
+			random_state =5
+		)
+		super().__init__(
+			model,
+			y,
+			x_train,
+			x_test,
+		)
+
