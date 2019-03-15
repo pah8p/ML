@@ -105,40 +105,48 @@ cleaner = Cleaner(x_train, x_test)
 cleaner.clean(variables)
 
 linear = regression.build('Linear')
-linear_cv = regression.cross_validate(linear, cleaner.x_train_np, y)
-print('LINEAR', linear_cv)
+#linear_cv = regression.cross_validate(linear, cleaner.x_train_np, y_np)
+#print('LINEAR', linear_cv)
 
 lasso = regression.build('Lasso', alpha=0.002)
-lasso_cv = regression.cross_validate(lasso, cleaner.x_train_np, y_np)
-print('LASSO', lasso_cv)
+#lasso_cv = regression.cross_validate(lasso, cleaner.x_train_np, y_np)
+#print('LASSO', lasso_cv)
 
 elastic_net = regression.build('ElasticNet', alpha=0.002)
-elastic_net_cv = regression.cross_validate(elastic_net, cleaner.x_train_np, y_np)
-print('ELASTIC NET', elastic_net_cv)
+#elastic_net_cv = regression.cross_validate(elastic_net, cleaner.x_train_np, y_np)
+#print('ELASTIC NET', elastic_net_cv)
 
 kernel_ridge = regression.build('KernelRidge')
-kernel_ridge_cv = regression.cross_validate(kernel_ridge, cleaner.x_train_np, y_np)
-print('KERNEL RIDGE', kernel_ridge_cv)
+#kernel_ridge_cv = regression.cross_validate(kernel_ridge, cleaner.x_train_np, y_np)
+#print('KERNEL RIDGE', kernel_ridge_cv)
 
 gradient_boost = regression.build('GradientBoosting')
-gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
-print('GRADIENT BOOST', gdcv)
+#gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
+#print('GRADIENT BOOST', gdcv)
 
-xg_boost = regression.build('XGBoost')
-xg_cv = regression.cross_validate(xg_boost, cleaner.x_train_np, y_np)
-print('XG BOOST', xg_cv)
+xg_boost = regression.build(
+	'XGBoost', 
+	gamma=0.0468, 
+	max_depth=3, 
+	min_child_weight=1.7817, 
+	subsample=0.5213, 
+	colsample_bytree=0.4603,
+	reg_lambda=0.8571,
+	reg_alpha=0.4640,
+	n_estimators=2200,
+	learning_rate=0.05,
+)
+#xg_cv = regression.cross_validate(xg_boost, cleaner.x_train_np, y_np)
+#print('XG BOOST', xg_cv)
 
-#subs = [lasso, elastic_net, kernel_ridge, gradient_boost]
-#model = regression.Lasso(alpha=0.005)
-#stacked = regression.Stacked(model, subs)
-#stacked_cv = stacked.cross_validate(cleaner.x_train_np, y_np)
+subs = [lasso, elastic_net, kernel_ridge, gradient_boost, xg_boost] 
+model = regression.build('Lasso', alpha=0.005)
+stacked = regression.build('Stacked', model=model, sub_models=subs)
+#stacked_cv = regression.cross_validate(stacked, cleaner.x_train_np, y_np)
 #print('STACKED', stacked_cv)
 
-#stacked.fit(cleaner.x_train_np, y_np)
-
-#stacked.predict(cleaner.x_test_np)
-
-#plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
+stacked.fit(cleaner.x_train_np, y_np)
+plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
 
 #res = pandas.DataFrame()
 #res['Id'] = test_id

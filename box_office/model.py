@@ -20,7 +20,7 @@ genres = []
 
 for r in x_train.iterrows():
 	try:
-		gs = ast.literal_eval(r[1]['spoken_languages'])
+		gs = ast.literal_eval(r[1]['original_language'])
 		for g in gs:
 			genres.append(g['name'])
 	except:
@@ -28,7 +28,7 @@ for r in x_train.iterrows():
 
 for r in x_test.iterrows():
 	try:
-		gs = ast.literal_eval(r[1]['spoken_languages'])
+		gs = ast.literal_eval(r[1]['original_languages'])
 		for g in gs:
 			genres.append(g['name'])
 	except:
