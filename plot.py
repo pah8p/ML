@@ -11,6 +11,9 @@ def view(plots):
 		plot(data)
 	pyplot.show()
 
+def scatter(x, y):
+	seaborn.scatterplot(x=x, y=y)
+	pyplot.show()
 
 def fitted_histogram(data):
 	seaborn.distplot(data, fit=stats.norm)

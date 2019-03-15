@@ -4,6 +4,12 @@ import plot
 import numpy
 import regression
 from clean import Cleaner
+import warnings
+
+def ignore_warn(*args, **kwargs):
+    pass
+
+warnings.warn = ignore_warn
 
 def map_mssubclass(x):
 	_map = {
@@ -53,7 +59,7 @@ variables = [
 	{'name': 'LotFrontage', 'na_f': 'attr_median', 'na_f_args': {'groupby': 'Neighborhood'}},
 	{'name': 'GarageYrBlt', 'na_val': 0},
 	{'name': 'GarageArea', 'na_val': 0},
-	{'name': 'GarageCars', 'na_va': 0},
+	{'name': 'GarageCars', 'na_val': 0},
 	{'name': 'BsmtFinSF1', 'na_val': 0},
 	{'name': 'BsmtFinSF2', 'na_val': 0},
 	{'name': 'BsmtUnfSF', 'na_val': 0},
@@ -105,46 +111,74 @@ variables = [
 	{'name': 'CentralAir', 'label_encode': True},
 ]
 
+x_train = x_train.drop(x_train[(x_train['GrLivArea']>4000) & (x_train['SalePrice']<300000)].index)
 
 y = pandas.DataFrame(x_train['SalePrice'], columns=['SalePrice'])
+
+prices = x_train['SalePrice']
 x_train.drop('SalePrice', axis=1, inplace=True)
 
-y['Log1SalePrice'] = numpy.log1p(y['SalePrice'])
+y['LogSalePrice'] = numpy.log(y['SalePrice'])
 
 plots = [
 	[plot.fitted_histogram, y['SalePrice']],
-	[plot.fitted_histogram, y['Log1SalePrice']],
-	[plot.qq, y['SalePrice']],
-	[plot.qq, y['Log1SalePrice']],
+	[plot.fitted_histogram, y['LogSalePrice']],
+#	[plot.qq, y['SalePrice']],
+#	[plot.qq, y['Log1SalePrice']],
 ]
 #plot.view(plots)
 
 #y.to_csv('y.csv', index=False)
 y_np = y.drop('SalePrice', axis=1).to_numpy()
 
+train_id = x_train['Id']
+test_id = x_test['Id']
+
+x_train.drop('Id', axis=1, inplace=True)
+x_test.drop('Id', axis=1, inplace=True)
+
 cleaner = Cleaner(x_train, x_test)
 cleaner.clean(variables)
 
 #cleaner.x_train.to_csv('x_train.csv', index=False)
 
-linear_model = regression.Linear(y, cleaner.x_train_np, cleaner.x_test_np)
-linear_model.fit()
-print(linear_model.cv)
+#linear = regression.Linear() 
+#linear_cv = linear.cross_validate(cleaner.x_train_np, y)
+#print('LINEAR', linear_cv)
 
-lasso = regression.Lasso(y, cleaner.x_train_np, cleaner.x_test_np, 0.005)
-lasso.fit()
-print('LASSO', lasso.cv)
+lasso = regression.Lasso(alpha=0.002)
+lasso_cv = lasso.cross_validate(cleaner.x_train_np, y_np)
+print('LASSO', lasso_cv)
 
-elastic_net = regression.ElasticNe(y, cleaner.x_train_np, cleaner.x_test_np)
-elastic_net.fit()
-print('ELASTIC NET', elastic_net.cv)
+elastic_net = regression.ElasticNet(alpha=0.002)
+elastic_net_cv = elastic_net.cross_validate(cleaner.x_train_np, y_np)
+print('ELASTIC NET', elastic_net_cv)
 
-kernel_ridge = regression.KernelRidge(y, cleaner.x_train_np, cleaner.x_test_np)
-kernel_ridge.fit()
-print('KERNEL RIDGE', kernel_ridge.cv)
+kernel_ridge = regression.KernelRidge()
+kernel_ridge_cv = kernel_ridge.cross_validate(cleaner.x_train_np, y_np)
+print('KERNEL RIDGE', kernel_ridge_cv)
 
-gradient_boost = regression.GradientBoosting(y, cleaner.x_train_np, cleaner.x_test_np)
-gradient_boost.fit()
-print('GRADIENT BOOTS', gradient_boost.cv)
+gradient_boost = regression.GradientBoosting()
+gdcv = gradient_boost.cross_validate(cleaner.x_train_np, y_np)
+print('GRADIENT BOOST', gdcv)
+
+subs = [lasso, elastic_net, kernel_ridge, gradient_boost]
+model = regression.Lasso(alpha=0.005)
+stacked = regression.Stacked(model, subs)
+#stacked_cv = stacked.cross_validate(cleaner.x_train_np, y_np)
+#print('STACKED', stacked_cv)
+
+stacked.fit(cleaner.x_train_np, y_np)
+
+#stacked.predict(cleaner.x_test_np)
+
+plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
+
+res = pandas.DataFrame()
+res['Id'] = test_id
+res['SalePrice'] = numpy.exp(stacked.predict(cleaner.x_test_np))
+res.to_csv('predictions3.csv', index=False)
+
+
 
 

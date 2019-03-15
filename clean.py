@@ -12,13 +12,11 @@ class Cleaner(object):
 		self.x_test = x_test
 
 	def nan_count(self, data):
-
-		nans = data.isnull().sum()
-		
+		nans = data.isnull().sum().sort_values(ascending=False)
 		if sum(nans) == 0:
 			return 'No NANs!'
 		else:
-			return pandas.DataFrame({'NAN_%': (data.isnull().sum()/len(data)) * 100})		
+			return pandas.DataFrame({'NAN_%': nans}).head()	
 
 	def box_cox_transform(self, data):
 		numericals = data.dtypes[data.dtypes != 'object'].index
@@ -66,9 +64,8 @@ class Cleaner(object):
 		
 		data = pandas.concat((self.x_train, self.x_test), sort=False).reset_index(drop=True)
 
-		print(data.shape)
-
-		print(self.nan_count(data))
+		#print(data.shape)
+		#print(self.nan_count(data))
 
 		for var in variables:
 
@@ -96,8 +93,8 @@ class Cleaner(object):
 		data = self.box_cox_transform(data)		
 		data = pandas.get_dummies(data)
 
-		print(data.shape)
-		print(self.nan_count(data))
+		#print(data.shape)
+		#print(self.nan_count(data))
 
 		self.x_train = data[:split]
 		self.x_test = data[split:]
