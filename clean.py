@@ -24,6 +24,7 @@ class Cleaner(object):
 		big_skew = skewed[abs(skewed) > 0.75]
 		big_skew_features = big_skew.index
 		lam = 0.15
+		print('transforming %s....' % big_skew_features)
 		for feature in big_skew_features:
 			data[feature] = special.boxcox1p(data[feature], lam)
 		return data
@@ -67,6 +68,8 @@ class Cleaner(object):
 		#print(data.shape)
 		#print(self.nan_count(data))
 
+		print('cleaning features...')
+
 		for var in variables:
 
 			name = var['name']
@@ -90,7 +93,9 @@ class Cleaner(object):
 				encoder.fit(data[name].to_list())
 				data[name] = encoder.transform(data[name].to_list())
 			
-		data = self.box_cox_transform(data)		
+		print('transforming skewed features...')
+		data = self.box_cox_transform(data)
+		print('one hot encoding categorical variables...')		
 		data = pandas.get_dummies(data)
 
 		#print(data.shape)

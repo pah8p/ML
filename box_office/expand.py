@@ -25,10 +25,67 @@ def genres(r, genre):
 			return 1
 	else:
 		return 0
+
+def language(r):
+
+	_map = {
+		'it': 'Italian',
+		#'nl': 'Netherlands',
+		'fa': 'Farsi',
+		#'cs': 'Czech Republic',
+		#'te': 'Telugu',
+		'pt': 'Portuguese',
+		#'is': 'Iceland',
+		#'ca': 'Canada',
+		#'nb': 'Norsk',
+		'vi': '',
+		'th': '',
+		'en': 'English',
+		'de': 'German',
+		'es': 'Spanish',
+		'fr': 'French',
+		'ar': 'Arabic',
+		'cn': 'Chinese',
+		'ja': 'Japanese',
+		'ru': 'Russian',
+	}
 	
+	_obj = r['original_language']
+	
+	try:
+		return _map[_obj]
+	except KeyError:
+		return 'Other'
+	
+def production_companies(r):
+	#TODO: Split Hollywood/Not Hollywood
+	pass
+
+def crew(r, job):
+	try:
+		_obj = ast.literal_eval(r['crew'])
+	except ValueError:
+		return 'None'
+
+	for c in _obj:
+		if c['job'] == job:
+			return c['name']
+	else:
+		return 'None'
+
+def actors(r, n):
+	try:
+		_obj = ast.literal_eval(r['crew'])
+	except ValueError:
+		return 'None'
+
+	try:
+		return _obj[n]['name']
+	except IndexError:
+		return 'None'
+
 def expand_columns(data):
 	data['collection'] = data.apply(lambda r: collection(r), axis=1)
-	data.drop(['belongs_to_collection'], axis=1, inplace=True)
 
 	data['adventure'] = data.apply(lambda r: genres(r, 'Adventure'), axis=1)
 	data['animation'] = data.apply(lambda r: genres(r, 'Animation'), axis=1)
@@ -50,6 +107,14 @@ def expand_columns(data):
 	data['documentary'] = data.apply(lambda r: genres(r, 'Documentary'), axis=1)
 	data['fantasy'] = data.apply(lambda r: genres(r, 'Fantasy'), axis=1)
 	data['mystery'] = data.apply(lambda r: genres(r, 'Mystery'), axis=1)
-	data.drop(['genres'], axis=1, inplace=True)
 
+	data['language'] = data.apply(lambda r: language(r), axis=1)
+
+	data['director'] = data.apply(lambda r: crew(r, 'Director'), axis=1)
+
+	data['actor_1'] = data.apply(lambda r: actors(r, 0), axis=1)
+	data['actor_2'] = data.apply(lambda r: actors(r, 1), axis=1)
+	data['actor_3'] = data.apply(lambda r: actors(r, 2), axis=1)
+
+	return data
 
