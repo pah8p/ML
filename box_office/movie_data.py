@@ -46,6 +46,7 @@ class Movie(object):
 		self.id = row['id']
 		self.title = row['title']
 		self.cast = None
+		self.budget = row['budget']
 
 		if math.isnan(row['revenue']):
 			self.revenue = None
@@ -236,6 +237,7 @@ def to_pandas(movies):
 			'cast_average_num_movies': movie.average_cast_movies(),
 			'top3_cast_movies': movie.top3_cast_movies(),
 			'top3_total_revenue': movie.top3_total_revenue(),
+			'budget': movie.budget,
 		}
 
 		genres = [

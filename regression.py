@@ -153,7 +153,18 @@ def build(model_type, **kwargs):
 
 	return model
 
+def xgboost_features(model, x_df):
+	#features = []
+	#for feature, importance in zip(x.columns.values.tolist(), xg_boost.feature_importances_):
+	#	features.append({
+	#		'feature': feature,
+	#		'importance': importance,
+	#	})	
 
+	#features.sort(key = lambda x: x['importance'], reverse = True)
 
-
-
+	#import seaborn
+	#from matplotlib import pyplot
+	#seaborn.barplot(data = pandas.DataFrame(features).head(10), x='feature', y='importance')
+	#pyplot.show()
+	pass
