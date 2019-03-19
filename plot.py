@@ -29,3 +29,6 @@ def correlation_matrix(data):
 	pyplot.subplots(figsize=(12,9))
 	seaborn.heatmap(matrix, vmax=0.9, square=True)
 
+def bar(data):
+	seaborn.barplot(data)
+	
