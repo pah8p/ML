@@ -2,37 +2,12 @@
 import pandas
 import plot
 import numpy
-import clean
-import ast
-import expand
+import movie_data
+from scipy import stats, special
+import regression
 
 x_train = pandas.read_csv('train.csv')
-x_train = expand.expand_columns(x_train)
 x_test = pandas.read_csv('test.csv')
-x_test = expand.expand_columns(x_test)
-
-#expand.expand_columns(x_test)
-
-#genres = []
-
-#for r in x_train.iterrows():
-#	try:
-#		gs = r[1]['original_language'] #ast.literal_eval(r[1]['original_language'])
-#		#print(gs)
-#		for g in gs:
-#			genres.append(gs) #g['name'])
-#	except:
-#		pass
-
-#for r in x_test.iterrows():
-#	try:
-#		gs = r[1]['original_language'] #ast.literal_eval(r[1]['original_language'])
-#		for g in gs:
-#			genres.append(gs) #['name'])
-#	except:
-#		pass
-
-#for z in set(genres): print(z)
 
 features = [
 	{'name': 'belongs_to_collection', 'drop': True},	
@@ -83,18 +58,78 @@ features = [
 ]
 
 
-cleaner = clean.Cleaner(x_train, x_test)
-cleaner.clean(features)
+x_train['log_revenue'] = numpy.log1p(x_train['revenue'])
+x_train['sqrt_revenue'] = x_train['revenue']**(1/5)
+x_train['bc_revenue'] = special.boxcox1p(x_train['revenue'], 0.15)
 
-print(cleaner.nan_count(cleaner.x_train))
-print(cleaner.nan_count(cleaner.x_test))
+#print(stats.kstest(x_train['bc_revenue'], 'norm'))
+
+#plot.view([
+	#[plot.fitted_histogram, x_train['revenue']],
+	#[plot.fitted_histogram, x_train['sqrt_revenue']],
+	#[plot.qq, x_train['bc_revenue']],
+#])
+
+y = x_train['sqrt_revenue']
+y_np = y.to_numpy()
+
+x = pandas.concat((x_train, x_test), sort=False).reset_index(drop=True)
+movies, x = movie_data.build(x)
+
+#print(sum(x.isnull().sum().sort_values(ascending=False)))
+
+x_train_np = x[:3000].to_numpy()
+x_test_np = x[3000:].to_numpy()
+#x_train.to_csv('x_train.csv', index=False)
+#x_test.to_csv('x_test.csv', index=False)
+
+#x_train_np = pandas.read_csv('x_train.csv').to_numpy()
+#x_test_np = pandas.read_csv('x_test.csv').to_numpy()
 
 
+#linear = regression.build('Linear')
+#linear_cv = regression.cross_validate(linear, cleaner.x_train_np, y_np)
+#print('LINEAR', linear_cv)
 
+lasso = regression.build('Lasso', alpha=0.002)
+#lasso_cv = regression.cross_validate(lasso, x_train_np, y_np)
+#print('LASSO', lasso_cv)
 
+elastic_net = regression.build('ElasticNet', alpha=0.002)
+#elastic_net_cv = regression.cross_validate(elastic_net, x_train_np, y_np)
+#print('ELASTIC NET', elastic_net_cv)
 
+kernel_ridge = regression.build('KernelRidge')
+#kernel_ridge_cv = regression.cross_validate(kernel_ridge, x_train_np, y_np)
+#print('KERNEL RIDGE', kernel_ridge_cv)
 
+#gradient_boost = regression.build('GradientBoosting')
+#gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
+#print('GRADIENT BOOST', gdcv)
 
+xg_boost = regression.build(
+	'XGBoost', 
+	gamma=0.0468, 
+	max_depth=3, 
+	min_child_weight=1.7817, 
+	subsample=0.5213, 
+	colsample_bytree=0.4603,
+	reg_lambda=0.8571,
+	reg_alpha=0.4640,
+	n_estimators=2200,
+	learning_rate=0.05,
+)
+#xg_cv = regression.cross_validate(xg_boost, x_train_np, y_np)
+#print('XG BOOST', xg_cv)
+
+#subs = [lasso, elastic_net, kernel_ridge, xg_boost] 
+#model = regression.build('Lasso', alpha=0.005)
+#stacked = regression.build('Stacked', model=model, sub_models=subs)
+#stacked_cv = regression.cross_validate(stacked, x_train_np, y_np)
+#print('STACKED', stacked_cv)
+
+xg_boost.fit(x_train_np, y_np)
+plot.scatter(x_train['revenue'], xg_boost.predict(x_train_np)**5)
 
 
 
