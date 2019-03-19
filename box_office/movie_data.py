@@ -71,13 +71,17 @@ class Movie(object):
 		offset = dt - zero
 		return offset.days
 
-		#return datetime.date(y, m, d)
-
 	def collection(self):
 		try:
 			return self.raw_collection[0]['name']
 		except TypeError:
 			return 'None'
+
+	def in_collection(self):
+		if self.collection() == 'None':
+			return 0
+		else:
+			return 1
 
 	def language(self):
 		try:
@@ -117,7 +121,8 @@ class Movie(object):
 
 	def star_average_revenue(self):
 		try:
-			return self.star().average_revenue_stared()
+			return (self.star().total_revenue_stared() - self.revenue)/(self.star().num_movies_stared()-1)			
+			#return self.star().average_revenue_stared()
 		except AttributeError:
 			return 0
 
@@ -130,6 +135,12 @@ class Movie(object):
 	def average_cast_movies(self):
 		#try:
 		return sum([actor.num_movies() for actor in self.cast])/len(self.cast)
+
+	def top3_cast_movies(self):
+		return sum([actor.num_movies() for actor in self.cast[:3]])/3
+
+	def top3_total_revenue(self):
+		return sum([actor.total_revenue() for actor in self.cast[:3]]) - 3*self.revenue
 
 class Actor(object):
 	
@@ -192,35 +203,36 @@ def build(data):
 
 def to_pandas(movies):
 
-	data = {
-		'language': [movie.language() for movie in movies],
-		'popularity': [movie.popularity for movie in movies],
-		'collection': [movie.collection() for movie in movies],
-		#'star_revenue': [movie.star_average_revenue() for movie in movies],
-		'star_movie_num': [movie.star_num_movies() for movie in movies],
-		'release_date': [movie.release_date() for movie in movies],
-	}
+	data = []
+	for movie in movies:
+		_data = {
+			'release_date': movie.release_date(),			
+			'language': movie.language(),
+			'popularity': movie.popularity,
+			'collection': movie.collection(),
+			'in_collection': movie.in_collection(),
+			'star_average_revenue': movie.star_average_revenue(),
+			'star_num_movies': movie.star_num_movies(),
+			'cast_average_num_movies': movie.average_cast_movies(),
+			'top3_cast_movies': movie.top3_cast_movies(),
+			'top3_total_revenue': movie.top3_total_revenue(),
+		}
 
-	genres = [
-		'adventure', 'animation', 'crime', 'horror',
-		'comedy', 'romance', 'drama', 'foreign', 'war', 
-		'science_fiction', 'family', 'thriller', 'action',
-		'western', 'music', 'history', 'tv_movie',
-		'documentary', 'fantasy', 'mystery',
-	]
+		genres = [
+			'adventure', 'animation', 'crime', 'horror',
+			'comedy', 'romance', 'drama', 'foreign', 'war', 
+			'science_fiction', 'family', 'thriller', 'action',
+			'western', 'music', 'history', 'tv_movie',
+			'documentary', 'fantasy', 'mystery',
+		]
 
-
-	def in_genre(genre):
-		_in = []
-		for movie in movies:
+		for genre in genres:
 			if genre in movie.genres():
-				_in.append(1)
+				_data[genre] = 1
 			else:
-				_in.append(0)
-		return _in
+				_data[genre] = 0
 
-	for genre in genres:
-		data[genre] = in_genre(genre)	
+		data.append(_data)
 
 	df = pandas.DataFrame(data)
 	df = pandas.get_dummies(df)
