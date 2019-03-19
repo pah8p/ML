@@ -2,6 +2,7 @@
 import ast
 import datetime
 import pandas
+import math
 
 language_map = {
 	'it': 'Italian',
@@ -38,7 +39,6 @@ class Movie(object):
 		self.raw_release_date = row['release_date']
 
 		self.original_language = row['original_language']
-		self.revenue = row['revenue']
 		self.tagline = row['tagline']
 		self.runtime = row['runtime']
 		self.popularity = row['popularity']
@@ -47,11 +47,22 @@ class Movie(object):
 		self.title = row['title']
 		self.cast = None
 
+		if math.isnan(row['revenue']):
+			self.revenue = None
+		else:
+			self.revenue = row['revenue']
+
 	def read(self, row, key):
 		try:
 			return ast.literal_eval(row[key])
 		except ValueError:
 			return None
+
+	def revenue(self):
+		if self.raw_revenue.isnan():
+			return None
+		else:
+			return self.raw_revenue
 
 	def release_date(self):
 		try:
@@ -121,10 +132,13 @@ class Movie(object):
 
 	def star_average_revenue(self):
 		try:
-			return (self.star().total_revenue_stared() - self.revenue)/(self.star().num_movies_stared()-1)			
-			#return self.star().average_revenue_stared()
+			return (self.star().total_revenue_stared() - self.revenue)/(self.star().num_movies_stared()-1)	
 		except AttributeError:
 			return 0
+		except ZeroDivisionError:
+			return 0
+		except TypeError:
+			return self.star().total_revenue_stared()/self.star().num_movies_stared()
 
 	def star_num_movies(self):
 		try:
@@ -133,14 +147,19 @@ class Movie(object):
 			return 0
 
 	def average_cast_movies(self):
-		#try:
-		return sum([actor.num_movies() for actor in self.cast])/len(self.cast)
+		try:
+			return sum([actor.num_movies() for actor in self.cast])/len(self.cast)
+		except ZeroDivisionError:
+			return 0
 
 	def top3_cast_movies(self):
 		return sum([actor.num_movies() for actor in self.cast[:3]])/3
 
 	def top3_total_revenue(self):
-		return sum([actor.total_revenue() for actor in self.cast[:3]]) - 3*self.revenue
+		try:
+			return sum([actor.total_revenue() for actor in self.cast[:3]]) - 3*self.revenue
+		except TypeError:
+			return sum([actor.total_revenue() for actor in self.cast[:3]])
 
 class Actor(object):
 	
@@ -152,7 +171,7 @@ class Actor(object):
 		return len(self.movies)
 
 	def total_revenue(self):
-		return sum(movie.revenue for movie in self.movies)
+		return sum(movie.revenue for movie in self.movies if movie.revenue)
 
 	def average_revenue(self):
 		return self.total_revenue()/sum([1 for movie in self.movies if movie.revenue])
@@ -164,7 +183,7 @@ class Actor(object):
 		return len(self.movies_stared())
 
 	def total_revenue_stared(self):
-		return sum(movie.revenue for movie in self.movies_stared())
+		return sum(movie.revenue for movie in self.movies_stared() if movie.revenue)
 
 	def average_revenue_stared(self):
 		try:
@@ -205,11 +224,12 @@ def to_pandas(movies):
 
 	data = []
 	for movie in movies:
+
 		_data = {
 			'release_date': movie.release_date(),			
 			'language': movie.language(),
 			'popularity': movie.popularity,
-			'collection': movie.collection(),
+			#'collection': movie.collection(),
 			'in_collection': movie.in_collection(),
 			'star_average_revenue': movie.star_average_revenue(),
 			'star_num_movies': movie.star_num_movies(),

@@ -8,6 +8,7 @@ import regression
 
 x_train = pandas.read_csv('train.csv')
 x_test = pandas.read_csv('test.csv')
+test_id = x_test['id']
 
 features = [
 	{'name': 'belongs_to_collection', 'drop': True},	
@@ -76,10 +77,11 @@ y_np = y.to_numpy()
 x = pandas.concat((x_train, x_test), sort=False).reset_index(drop=True)
 movies, x = movie_data.build(x)
 
-#print(sum(x.isnull().sum().sort_values(ascending=False)))
+print(x.isnull().sum().sort_values(ascending=False).head())
 
 x_train_np = x[:3000].to_numpy()
 x_test_np = x[3000:].to_numpy()
+x.to_csv('x.csv', index=False)
 #x_train.to_csv('x_train.csv', index=False)
 #x_test.to_csv('x_test.csv', index=False)
 
@@ -92,16 +94,16 @@ x_test_np = x[3000:].to_numpy()
 #print('LINEAR', linear_cv)
 
 lasso = regression.build('Lasso', alpha=0.002)
-#lasso_cv = regression.cross_validate(lasso, x_train_np, y_np)
-#print('LASSO', lasso_cv)
+lasso_cv = regression.cross_validate(lasso, x_train_np, y_np)
+print('LASSO', lasso_cv)
 
 elastic_net = regression.build('ElasticNet', alpha=0.002)
-#elastic_net_cv = regression.cross_validate(elastic_net, x_train_np, y_np)
-#print('ELASTIC NET', elastic_net_cv)
+elastic_net_cv = regression.cross_validate(elastic_net, x_train_np, y_np)
+print('ELASTIC NET', elastic_net_cv)
 
 kernel_ridge = regression.build('KernelRidge')
-#kernel_ridge_cv = regression.cross_validate(kernel_ridge, x_train_np, y_np)
-#print('KERNEL RIDGE', kernel_ridge_cv)
+kernel_ridge_cv = regression.cross_validate(kernel_ridge, x_train_np, y_np)
+print('KERNEL RIDGE', kernel_ridge_cv)
 
 #gradient_boost = regression.build('GradientBoosting')
 #gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
@@ -109,11 +111,11 @@ kernel_ridge = regression.build('KernelRidge')
 
 xg_boost = regression.build(
 	'XGBoost', 
-	gamma=0.0468, 
+	gamma=0.02, 
 	max_depth=3, 
 	min_child_weight=1.7817, 
-	subsample=0.5213, 
-	colsample_bytree=0.4603,
+	subsample=0.5, 
+	colsample_bytree=0.5,
 	reg_lambda=0.8571,
 	reg_alpha=0.4640,
 	n_estimators=2200,
@@ -122,14 +124,35 @@ xg_boost = regression.build(
 #xg_cv = regression.cross_validate(xg_boost, x_train_np, y_np)
 #print('XG BOOST', xg_cv)
 
-#subs = [lasso, elastic_net, kernel_ridge, xg_boost] 
-#model = regression.build('Lasso', alpha=0.005)
-#stacked = regression.build('Stacked', model=model, sub_models=subs)
-#stacked_cv = regression.cross_validate(stacked, x_train_np, y_np)
-#print('STACKED', stacked_cv)
+subs = [lasso, elastic_net, kernel_ridge, xg_boost] 
+model = regression.build('Lasso', alpha=0.005)
+stacked = regression.build('Stacked', model=model, sub_models=subs)
+stacked_cv = regression.cross_validate(stacked, x_train_np, y_np)
+print('STACKED', stacked_cv)
 
-xg_boost.fit(x_train_np, y_np)
-plot.scatter(x_train['revenue'], xg_boost.predict(x_train_np)**5)
+#xg_boost.fit(x_train_np, y_np)
+
+#features = []
+#for feature, importance in zip(x.columns.values.tolist(), xg_boost.feature_importances_):
+#	features.append({
+#		'feature': feature,
+#		'importance': importance,
+#	})	
+
+#features.sort(key = lambda x: x['importance'], reverse = True)
+
+#import seaborn
+#from matplotlib import pyplot
+#seaborn.barplot(data = pandas.DataFrame(features).head(10), x='feature', y='importance')
+#pyplot.show()
+
+#print(xg_boost.feature_importances_)
+plot.scatter(x_train['revenue'], stacked.predict(x_train_np)**5)
+
+#res = pandas.DataFrame()
+#res['id'] = test_id
+#res['revenue'] = xg_boost.predict(x_test_np)**5
+#res.to_csv('predictions.csv', index=False)
 
 
 
