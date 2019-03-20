@@ -1,21 +1,21 @@
 
 import sklearn
-from sklearn import linear_model, kernel_ridge, ensemble
+from sklearn import linear_model, kernel_ridge, ensemble, svm
 from sklearn import metrics, model_selection, pipeline, preprocessing
 import pandas
 import numpy
 import xgboost
 
 
-def cross_validate(model, x, y, n_folds=5):
+def cross_validate(model, x, y, n_folds=5, scoring='neg_mean_squared_error'):
 	kf = model_selection.KFold(n_folds, shuffle=True, random_state = 42).get_n_splits(x)
-	score = numpy.sqrt(-model_selection.cross_val_score(
+	score = model_selection.cross_val_score(
 		model,
 		x,
 		y,
-		scoring = 'neg_mean_squared_error',
-		cv = kf
-	))
+		scoring=scoring,
+		cv=kf
+	)
 	return score, numpy.mean(score)
 
 
@@ -71,6 +71,16 @@ MODELS = {
 	'Linear': {
 		'model': linear_model.LinearRegression,
 		'kwargs': {},
+	},
+	'Logistic': {
+		'model': linear_model.LogisticRegression,
+		'kwargs': {'C': 1},
+	},
+	'LogisticCV': {
+		'model': linear_model.LogisticRegressionCV,
+		'kwargs': {
+			'cv': 5,
+		},
 	},
 	'Lasso': {
 		'model': linear_model.Lasso,
@@ -133,6 +143,14 @@ MODELS = {
 #			'random_state': 7, 
 			'nthread': -1,			# Number of parallel threads used to run XGBoost
 		},
+	},
+	'LinearSVC': {
+		'model': svm.LinearSVC,
+		'kwargs': {'C': 1},
+	},
+	'SVC': {
+		'model': svm.SVC,
+		'kwargs': {'C': 1},
 	},
 }
 
