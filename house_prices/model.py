@@ -5,6 +5,7 @@ import numpy
 import regression
 from clean import Cleaner
 import warnings
+import tensorflow
 
 def ignore_warn(*args, **kwargs):
     pass
@@ -104,21 +105,21 @@ x_test.drop('Id', axis=1, inplace=True)
 cleaner = Cleaner(x_train, x_test)
 cleaner.clean(variables)
 
-linear = regression.build('Linear')
+#linear = regression.build('Linear')
 #linear_cv = regression.cross_validate(linear, cleaner.x_train_np, y_np)
 #print('LINEAR', linear_cv)
 
 lasso = regression.build('Lasso', alpha=0.002)
-#lasso_cv = regression.cross_validate(lasso, cleaner.x_train_np, y_np)
-#print('LASSO', lasso_cv)
+lasso_cv = regression.cross_validate(lasso, cleaner.x_train_np, y_np)
+
 
 elastic_net = regression.build('ElasticNet', alpha=0.002)
-#elastic_net_cv = regression.cross_validate(elastic_net, cleaner.x_train_np, y_np)
-#print('ELASTIC NET', elastic_net_cv)
+elastic_net_cv = regression.cross_validate(elastic_net, cleaner.x_train_np, y_np)
+
 
 kernel_ridge = regression.build('KernelRidge')
-#kernel_ridge_cv = regression.cross_validate(kernel_ridge, cleaner.x_train_np, y_np)
-#print('KERNEL RIDGE', kernel_ridge_cv)
+kernel_ridge_cv = regression.cross_validate(kernel_ridge, cleaner.x_train_np, y_np)
+
 
 gradient_boost = regression.build('GradientBoosting')
 #gdcv = regression.cross_validate(gradient_boost, cleaner.x_train_np, y_np)
@@ -137,22 +138,48 @@ xg_boost = regression.build(
 	learning_rate=0.05,
 )
 #xg_cv = regression.cross_validate(xg_boost, cleaner.x_train_np, y_np)
-#print('XG BOOST', xg_cv)
 
-subs = [lasso, elastic_net, kernel_ridge, gradient_boost, xg_boost] 
+nn = regression.build(
+	'NeuralNetworkRegression',
+	optimizer='adam',
+	loss='mean_squared_error',
+	metrics=['accuracy'],
+	epochs=100,
+	verbose=0,
+	layers= [
+		tensorflow.keras.layers.Dense(128, activation = 'relu', input_shape=cleaner.x_train_np.shape[1:]), #kernel_regularizer=tensorflow.keras.regularizers.l2(0.001)),
+		#tensorflow.keras.layers.Dropout(0.25),
+		tensorflow.keras.layers.Dense(128, activation = 'relu'), #kernel_regularizer=tensorflow.keras.regularizers.l2(0.001)),
+		tensorflow.keras.layers.Dense(1),
+	]
+)
+
+nn_cv = regression.cross_validate(nn, cleaner.x_train_np, y_np)
+
+subs = [lasso, elastic_net, kernel_ridge, nn, xg_boost]
 model = regression.build('Lasso', alpha=0.005)
 stacked = regression.build('Stacked', model=model, sub_models=subs)
-#stacked_cv = regression.cross_validate(stacked, cleaner.x_train_np, y_np)
-#print('STACKED', stacked_cv)
+stacked_cv = regression.cross_validate(stacked, cleaner.x_train_np, y_np)
+
+#print('KERNEL RIDGE', kernel_ridge_cv[1])
+#print('ELASTIC NET', elastic_net_cv[1])
+#print('LASSO', lasso_cv[1])
+#print('XG BOOST', xg_cv)
+#print('NEURAL NET', nn_cv[1])
+print('STACKED', stacked_cv[1])
+
 
 stacked.fit(cleaner.x_train_np, y_np)
-plot.scatter(prices, numpy.exp(stacked.predict(cleaner.x_train_np)))
+pred=stacked.predict(cleaner.x_train_np)
+plot.scatter(prices, numpy.exp(pred))
 
-#res = pandas.DataFrame()
-#res['Id'] = test_id
-#res['SalePrice'] = numpy.exp(stacked.predict(cleaner.x_test_np))
-#res.to_csv('predictions3.csv', index=False)
+res = pandas.DataFrame()
+res['Id'] = test_id
+res['SalePrice'] = numpy.exp(stacked.predict(cleaner.x_test_np))
+res.to_csv('predictions4.csv', index=False)
 
+p_res = pandas.read_csv('predictions3.csv')
 
+plot.scatter(res['SalePrice'], p_res['SalePrice'])
 
 

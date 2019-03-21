@@ -5,10 +5,11 @@ from sklearn import metrics, model_selection, pipeline, preprocessing
 import pandas
 import numpy
 import xgboost
+import tensorflow
 
 
-def cross_validate(model, x, y, n_folds=5, scoring='neg_mean_squared_error'):
-	kf = model_selection.KFold(n_folds, shuffle=True, random_state = 42).get_n_splits(x)
+def cross_validate_sklearn(model, x, y, n_folds=5, scoring='neg_mean_squared_error'):
+	kf = model_selection.KFold(n_folds, shuffle=True).get_n_splits(x)
 	score = model_selection.cross_val_score(
 		model,
 		x,
@@ -18,6 +19,16 @@ def cross_validate(model, x, y, n_folds=5, scoring='neg_mean_squared_error'):
 	)
 	return score, numpy.mean(score)
 
+def cross_validate(model, x, y, n_folds=5):
+	score = []
+	kf = model_selection.KFold(n_folds, shuffle=True)
+	for train, test in kf.split(x, y):
+		model.fit(x[train], y[train])
+		y_pred = model.predict(x[test])
+		score.append(
+			numpy.mean([(a-b)**2 for a, b in zip(y[test], y_pred)])
+		)
+	return score, numpy.mean(score)
 
 class Stacked(sklearn.base.BaseEstimator):
 
@@ -25,7 +36,7 @@ class Stacked(sklearn.base.BaseEstimator):
 		self.sub_models = sub_models
 		self.model = model
 
-	def fit(self, x, y):
+	def fit(self, x, y, epochs=100, verbose=0):
 
 		fitted_models = []
 
@@ -37,7 +48,11 @@ class Stacked(sklearn.base.BaseEstimator):
 			fitted_submodels = []
 			for train, test in kf.split(x, y):
 				
+				#if isinstance(sub_model, tensorflow.keras.Sequential):
+				#	sub_model.fit(x[train], y[train], epochs = epochs, verbose = verbose)
+				#else:
 				sub_model.fit(x[train], y[train])
+				
 				pred = sub_model.predict(x[test])
 	
 				try:
@@ -66,6 +81,20 @@ class Stacked(sklearn.base.BaseEstimator):
 	
 		_x = numpy.column_stack(preds)
 		return self.model.predict(_x)
+
+class NeuralNetworkRegression(object):
+
+	def __init__(self, layers, optimizer, loss, metrics, epochs, verbose):
+		self.model = tensorflow.keras.Sequential(layers)
+		self.model.compile(optimizer=optimizer, loss=loss, metrics=metrics)
+		self.epochs = epochs
+		self.verbose = verbose
+
+	def fit(self, x, y):
+		return self.model.fit(x, y, epochs = self.epochs, verbose = self.verbose)
+
+	def predict(self, x):
+		return [p[0] for p in self.model.predict(x)]
 
 MODELS = {
 	'Linear': {
@@ -152,6 +181,17 @@ MODELS = {
 		'model': svm.SVC,
 		'kwargs': {'C': 1},
 	},
+	'NeuralNetworkRegression': {
+		'model': NeuralNetworkRegression,
+		'kwargs': {
+			'layers': [],
+			'optimizer': 'adam', 
+			'loss': 'mean_squared_error',
+			'metrics': ['accuracy'],
+			'epochs': 5, 
+			'verbose': 0,
+		}
+	}
 }
 
 def build(model_type, **kwargs):

@@ -2,74 +2,45 @@
 import regression
 import pandas
 import numpy
-from matplotlib import pyplot
+import utils
+import plot
 import tensorflow
 from tensorflow import keras
-import utils
+from sklearn import model_selection, metrics
 
-
-N = 42000
+N = 500
 
 with utils.Watch('Loading data'):
 	x = pandas.read_csv('train.csv', nrows=N)
 
-y = x['label']
+y = x['label'].to_numpy()
 x = x.drop(['label'], axis=1)
 
-x = x.applymap(lambda x: x/255.0)
-
-def show_image(img):
-	pyplot.figure()
-	pyplot.imshow(img)
-	pyplot.colorbar()
-	pyplot.grid(False)
-	pyplot.show()
-
-def expand_image(r):
-	image = numpy.zeros((28, 28, 1))
-	for i in range(28):
-		for j in range(28):
-			image[i, j, 0] = r[28*i + j] #/255.0
-	return image
-
-with utils.Watch('Transforming data'):
-	x_np = numpy.array([expand_image(r) for r in x.to_numpy()])
-
-#split = int(N/2)
-
-#x_train = x_np[:split]
-y_np = y.to_numpy()
-#x_test = x_np[split:]	
-#y_test = y[split:].to_numpy()
-
-#print(x_train.shape)
+x /= 255.0
+x = x.to_numpy().reshape(N, 28, 28, 1)
 
 
-#logistic = regression.build('Logistic', C=0.1)
-#logistic_cv = regression.cross_validate(logistic, x_train_np, y_np, scoring='completeness_score')
-#print('LOGISTIC', logistic_cv[1])
-#logistic.fit(x_train_np, y_np)
-#print(logistic.score(x_test_np, y_test_np))
+x_train, x_test, y_train, y_test = model_selection.train_test_split(
+	x, y, test_size = 0.1, random_state=2
+)
 
-#svc = regression.build('SVC', C=0.1, kernel='poly', degree=2, cache_size=500)
-#svc.fit(x_train.to_numpy(), y_train.to_numpy())
-#print(svc.score(x_test.to_numpy(), y_test.to_numpy()))
+def support_vector_machine(x, y, predict=False):
 
-#x_train = pandas.read_csv('test.csv')
-#assert(len(x_train)==28000)
+	x = x.reshape(len(x), 28*28)
 
-#pred = pandas.DataFrame()
-#pred['ImageId'] = list(range(1, 28000+1))
-#pred['Label'] = svc.predict(x_train.to_numpy())
-#pred.to_csv('predictions.csv', index=False)
+	svc = regression.build('SVC', C=0.1, kernel='poly', degree=2, cache_size=500)
+	svc.fit(x, y)
+	print(svc.score(x, y))
 
-#tf = keras.Sequential([
-#	keras.layers.Flatten(input_shape=(28, 28)),
-#	keras.layers.Dense(128, activation=tensorflow.nn.relu, kernel_regularizer=keras.regularizers.l2(0.001)),
-#	keras.layers.Dropout(0.5),
-#	keras.layers.Dense(10, activation=tensorflow.nn.softmax),
-#])
+	if predict:
+		x_test = pandas.read_csv('test.csv')
 
+		pred = pandas.DataFrame()
+		pred['ImageId'] = list(range(1, 28000+1))
+		pred['Label'] = svc.predict(x_test.to_numpy())
+		pred.to_csv('predictions.csv', index=False)
+
+#support_vector_machine(x_train, y_train)
 
 tf = keras.Sequential([
 	keras.layers.Conv2D(
@@ -108,33 +79,33 @@ tf = keras.Sequential([
 tf.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 with utils.Watch('Fitting model'):
-	tf.fit(x_np, y_np, epochs=10)
+	tf.fit(x_train, y_train, epochs=2)
 
-#with utils.Watch('Evaluating model'):
-#	print(tf.evaluate(x_test, y_test))
+with utils.Watch('Evaluating model'):
+	print(tf.evaluate(x_test, y_test))
 
-x_np = numpy.array([expand_image(r) for r in x.to_numpy()])
-
-test = pandas.read_csv('test.csv')
-test = test.applymap(lambda x: x/255.0)
-test = numpy.array([expand_image(r) for r in test.to_numpy()])
-
-#assert(len(x)==28000)
-
-with utils.Watch('Predicting test data'):
-	pred = pandas.DataFrame()
-	pred['ImageId'] = list(range(1, 28000+1))
-	pred['Label'] = [numpy.argmax(p) for p in tf.predict(test)]
-	pred.to_csv('predictions4.csv', index=False)
+with utils.Watch('Generating confusion matrix'):
+	y_pred = [numpy.argmax(p) for p in tf.predict(x_test)]
+	matrix = metrics.confusion_matrix(y_test, y_pred)
+	plot.confusion_matrix(matrix)
 
 
-#def score(model, x, y):
-#	return sum([1*(y==y_pred) for y, y_pred in zip(y, model.predict(x))])/split
+def predict(model):
+
+	test = pandas.read_csv('test.csv')
+	test /= 255.0
+	test = testx.values.reshape(len(test), 28, 28, 1)
+#	test = test.applymap(lambda x: x/255.0)
+#	test = numpy.array([expand_image(r) for r in test.to_numpy()])
 
 
+	with utils.Watch('Predicting test data'):
+		pred = pandas.DataFrame()
+		pred['ImageId'] = list(range(1, 28000+1))
+		pred['Label'] = [numpy.argmax(p) for p in tf.predict(test)]
+		pred.to_csv('predictions4.csv', index=False)
 
-
-
+#predict(tf)
 
 
 
