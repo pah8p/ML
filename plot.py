@@ -42,7 +42,7 @@ def bar(data):
 	seaborn.barplot(data)
 
 def confusion_matrix(matrix):
-	seaborn.heatmap(matrix, cmap = pyplot.cm.Blues, annot=True, square=True, x='Predicted', y='Actual')
+	seaborn.heatmap(matrix, cmap = pyplot.cm.Blues, annot=True, square=True) #, x='Predicted', y='Actual')
 	pyplot.show()
 
 def show_image(img):
