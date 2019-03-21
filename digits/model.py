@@ -79,7 +79,7 @@ tf = keras.Sequential([
 tf.compile(optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 with utils.Watch('Fitting model'):
-	tf.fit(x_train, y_train, epochs=2)
+	tf.fit(x_train, y_train, epochs=2) #, verbose=0)
 
 with utils.Watch('Evaluating model'):
 	print(tf.evaluate(x_test, y_test))

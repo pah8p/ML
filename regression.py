@@ -8,7 +8,7 @@ import xgboost
 import tensorflow
 
 
-def cross_validate_sklearn(model, x, y, n_folds=5, scoring='neg_mean_squared_error'):
+def cross_validate_sklearn(model, x, y, n_folds=5, scoring='mean_squared_error'):
 	kf = model_selection.KFold(n_folds, shuffle=True).get_n_splits(x)
 	score = model_selection.cross_val_score(
 		model,
@@ -48,11 +48,7 @@ class Stacked(sklearn.base.BaseEstimator):
 			fitted_submodels = []
 			for train, test in kf.split(x, y):
 				
-				#if isinstance(sub_model, tensorflow.keras.Sequential):
-				#	sub_model.fit(x[train], y[train], epochs = epochs, verbose = verbose)
-				#else:
 				sub_model.fit(x[train], y[train])
-				
 				pred = sub_model.predict(x[test])
 	
 				try:
