@@ -36,7 +36,7 @@ class Stacked(sklearn.base.BaseEstimator):
 		self.sub_models = sub_models
 		self.model = model
 
-	def fit(self, x, y, epochs=100, verbose=0):
+	def fit(self, x, y):
 
 		fitted_models = []
 

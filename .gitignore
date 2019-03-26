@@ -21,3 +21,10 @@ house_prices/x_train.csv
 house_prices/y.csv
 kaggle.json
 temp/
+house_prices/predictions4.csv
+earthquakre/train.csv.zip
+earthquake/train.csv
+earthquake/test.zip
+earthquake/numpy_data/
+earthquake/sample_submission.csv
+earthquake/train.csv.zip
