@@ -14,7 +14,8 @@ class SimpleNeuralNet(object):
 		]
 
 	def _relu(self, x):
-		return numpy.array([max(z, 0.001) for z in x])
+		#return numpy.array([_x if _x > 0 else 0.01 for _x in x])
+		return numpy.array([max(z, 0.1) for z in x])
 
 	def _predict(self, x):
 		return self._relu(x @ self.w[0]) @ self.w[1] 
@@ -44,12 +45,12 @@ class SimpleNeuralNet(object):
 				if theta[n] > 0:
 					dH_dw0[i, n] = x[i]
 				else:
-					dH_dw0[i, n] = 0.001
+					dH_dw0[i, n] = 0.1*x[i]
 
-		E = self._squared_error(x, y)
+		E = self.mean_squared_error()
 		
 		factors = [len(x)*self.num_nodes/self.learning_rate, self.num_nodes/self.learning_rate]
-
+	
 		w = [
 			self.w[0] - E/(dE_dYhat * dYhat_dH * dH_dw0)/factors[0],
 			self.w[1] - E/(dE_dYhat * dYhat_dw1)/factors[1],
@@ -57,12 +58,6 @@ class SimpleNeuralNet(object):
 
 		self.w = w
 
-		#print(y)
-		#a = self._squared_error(x, y)
-		#print(w)
-		#b = self._squared_error(x, y)
-		#print(b<a, a, b)
-		
 	def fit(self, epochs):
 		print(0, self.mean_squared_error())
 		for epoch in range(epochs):
@@ -78,11 +73,11 @@ x = numpy.array([
 	[16,17,18,19,20],
 ])
 
-y = numpy.array([40, 110, 180, 240])
+y = numpy.array([6, 21, 36, 51])
 
 #print(x.shape)
 
-snn = SimpleNeuralNet(x, y, 4, 0.25)
+snn = SimpleNeuralNet(x, y, 4, 0.5)
 
 print(snn.w)
 
@@ -95,7 +90,7 @@ print(snn.w)
 #for i in range(5):
 #	snn._update(x[0], y[0])
 
-snn.fit(50)
+snn.fit(5)
 
 print(snn.w)
 
